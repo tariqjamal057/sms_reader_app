@@ -40,3 +40,7 @@ app-example
 
 # code editor
 .vscode
+.idea
+
+# mobile app build files
+android
