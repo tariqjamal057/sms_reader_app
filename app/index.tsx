@@ -6,17 +6,69 @@ import {
   Text,
   Platform,
   PermissionsAndroid,
+  View,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
 } from "react-native";
 import SmsRetriever from "react-native-sms-retriever";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function HomeScreen() {
   const [otp, setOtp] = useState<string | null>(null);
   const [listening, setListening] = useState(false);
   const [smsPermission, setSmsPermission] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState<string>("");
+  const [isEditing, setIsEditing] = useState(false);
+  const [tempPhoneNumber, setTempPhoneNumber] = useState("");
 
   useEffect(() => {
     checkSmsPermissions();
+    loadPhoneNumber();
   }, []);
+
+  const loadPhoneNumber = async () => {
+    try {
+      const storedNumber = await AsyncStorage.getItem("phoneNumber");
+      if (storedNumber) {
+        setPhoneNumber(storedNumber);
+      }
+    } catch (error) {
+      console.error("Error loading phone number:", error);
+    }
+  };
+
+  const savePhoneNumber = async (number: string) => {
+    try {
+      await AsyncStorage.setItem("phoneNumber", number);
+      setPhoneNumber(number);
+    } catch (error) {
+      console.error("Error saving phone number:", error);
+    }
+  };
+
+  const handleSavePhoneNumber = () => {
+    if (tempPhoneNumber.trim()) {
+      savePhoneNumber(tempPhoneNumber.trim());
+      setTempPhoneNumber("");
+      setIsEditing(false);
+    }
+  };
+
+  const handleEditPhoneNumber = () => {
+    setTempPhoneNumber(phoneNumber);
+    setIsEditing(true);
+  };
+
+  const handleCancelEdit = () => {
+    setTempPhoneNumber("");
+    setIsEditing(false);
+  };
+
+  const handleDeletePhoneNumber = () => {
+    savePhoneNumber("");
+    setIsEditing(false);
+  };
 
   const checkSmsPermissions = async () => {
     if (Platform.OS === "android") {
@@ -55,6 +107,8 @@ export default function HomeScreen() {
     try {
       if (!smsPermission) {
         const granted = await requestSmsPermissions();
+        console.log("SMS permissions granted:", granted);
+
         if (!granted) {
           Alert.alert(
             "Permission Required",
@@ -147,37 +201,141 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaView
-      style={{
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        padding: 20,
-      }}
-    >
-      <Text style={{ fontSize: 18, marginBottom: 20 }}>
-        SMS Permission: {smsPermission ? "Granted" : "Required"}
-      </Text>
+    <SafeAreaView style={styles.container}>
+      {phoneNumber && (
+        <>
+          <Text style={{ fontSize: 18, marginBottom: 20 }}>
+            SMS Permission: {smsPermission ? "Granted" : "Required"}
+          </Text>
 
-      <Button
-        title={listening ? "Listening for SMS..." : "Start Listening"}
-        onPress={startListening}
-        disabled={listening}
-      />
+          <Button
+            title={listening ? "Listening for SMS..." : "Start Listening"}
+            onPress={startListening}
+            disabled={listening}
+          />
 
-      <Text style={{ height: 20 }} />
+          <Text style={{ height: 20 }} />
 
-      <Button
-        title="Stop Listening"
-        onPress={stopListening}
-        disabled={!listening}
-      />
+          <Button
+            title="Stop Listening"
+            onPress={stopListening}
+            disabled={!listening}
+          />
+        </>
+      )}
 
       {otp && (
         <Text style={{ marginTop: 20, fontSize: 18, fontWeight: "bold" }}>
           Detected OTP: {otp}
         </Text>
       )}
+
+      <View style={styles.phoneSection}>
+        <Text style={styles.sectionTitle}>Phone Number</Text>
+
+        {phoneNumber && !isEditing ? (
+          <View style={styles.phoneNumberContainer}>
+            <Text style={styles.phoneNumberText}>{phoneNumber}</Text>
+            <View style={styles.actionButtons}>
+              <TouchableOpacity
+                onPress={handleEditPhoneNumber}
+                style={styles.actionButton}
+              >
+                <Text style={styles.actionButtonText}>Edit</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleDeletePhoneNumber}
+                style={styles.actionButton}
+              >
+                <Text style={styles.actionButtonText}>Delete</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : (
+          <View style={styles.editContainer}>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter phone number"
+              value={isEditing ? tempPhoneNumber : phoneNumber}
+              onChangeText={isEditing ? setTempPhoneNumber : setPhoneNumber}
+              keyboardType="phone-pad"
+              autoFocus={isEditing}
+            />
+            <View style={styles.actionButtons}>
+              <TouchableOpacity
+                onPress={
+                  isEditing
+                    ? handleSavePhoneNumber
+                    : () => handleSavePhoneNumber()
+                }
+                style={styles.actionButton}
+              >
+                <Text style={styles.actionButtonText}>
+                  {isEditing ? "Save" : "Add"}
+                </Text>
+              </TouchableOpacity>
+              {isEditing && (
+                <TouchableOpacity
+                  onPress={handleCancelEdit}
+                  style={styles.actionButton}
+                >
+                  <Text style={styles.actionButtonText}>Cancel</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        )}
+      </View>
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    marginTop: 100,
+    width: "100%",
+    height: "100%",
+    padding: 20,
+  },
+  phoneSection: {
+    marginTop: 30,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 15,
+  },
+  phoneNumberContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 15,
+    backgroundColor: "#f5f5f5",
+    borderRadius: 5,
+  },
+  phoneNumberText: {
+    fontSize: 16,
+  },
+  editContainer: {
+    flexDirection: "column",
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 5,
+    padding: 10,
+    marginBottom: 10,
+  },
+  actionButtons: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+  },
+  actionButton: {
+    marginLeft: 10,
+    padding: 5,
+  },
+  actionButtonText: {
+    color: "#007AFF",
+    fontSize: 14,
+  },
+});
