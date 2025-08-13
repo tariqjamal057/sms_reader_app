@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Sand Booking OTP",
-    "slug": "Sand Booking OTP",
+    "name": "mobile_app",
+    "slug": "mobile_app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -17,7 +17,8 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.tariqjamal4267324.mobile_app"
+      "package": "com.tariqjamal4267324.mobile_app",
+      "permissions": ["RECEIVE_SMS", "READ_SMS", "SEND_SMS"]
     },
     "web": {
       "bundler": "metro",
