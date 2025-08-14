@@ -17,8 +17,8 @@ export default function HomeScreen() {
   const [isNumberSet, setIsNumberSet] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | number | null>(null);
+  const [currentOTP, setCurrentOTP] = useState("");
 
-  // Load saved phone number & last OTP cache on app start
   useEffect(() => {
     (async () => {
       const savedNumber = await AsyncStorage.getItem("phone_number");
@@ -30,7 +30,6 @@ export default function HomeScreen() {
     })();
   }, []);
 
-  // Save phone number to storage
   const savePhoneNumber = async () => {
     if (!phoneNumber.trim()) {
       Alert.alert("Validation Error", "Please enter a phone number.");
@@ -41,7 +40,6 @@ export default function HomeScreen() {
     setIsEditing(false);
   };
 
-  // Request SMS Read Permission
   async function requestSMSPermission(): Promise<boolean> {
     try {
       const granted = await PermissionsAndroid.request(
@@ -61,12 +59,11 @@ export default function HomeScreen() {
     }
   }
 
-  // Fetch latest SMS and check OTP format
   const fetchLatestSMS = () => {
     SmsAndroid.list(
       JSON.stringify({
         box: "inbox",
-        maxCount: 1,
+        maxCount: 10,
       }),
       (fail) => {
         console.log("SMS fetch failed:", fail);
@@ -75,13 +72,23 @@ export default function HomeScreen() {
         const messages = JSON.parse(smsList);
         if (messages.length > 0) {
           const latestMsg = messages[0];
-          const latestMsgId = latestMsg._id;
           const latestBody = latestMsg.body;
+          console.log("Latest SMS:", latestBody);
 
-          const match = latestBody.match(
-            /SSMMS.*([A-Za-z0-9]{6}).*TSMDCL/
-          );
-          console.log(match);
+          let match = null;
+
+          // Format 1: "Your SSMMS Login OTP 57322A - TSMDCL"
+          const pattern1 = /SSMMS.*([A-Za-z0-9]{6}).*TSMDCL/;
+
+          // Format 2: "8F4C9 is your One Time Password for SSMMS Login - TSMDCL"
+          const pattern2 =
+            /^([A-Za-z0-9]{5,6})\s+is\s+your\s+One\s+Time\s+Password.*SSMMS.*TSMDCL/i;
+
+          if (pattern1.test(latestBody)) {
+            match = latestBody.match(pattern1);
+          } else if (pattern2.test(latestBody)) {
+            match = latestBody.match(pattern2);
+          }
 
           if (match) {
             const otp = match[1];
@@ -93,7 +100,6 @@ export default function HomeScreen() {
     );
   };
 
-  // Send OTP to backend
   const sendOtpToServer = async (otpValue: string) => {
     try {
       const res = await fetch(
@@ -107,13 +113,15 @@ export default function HomeScreen() {
           }),
         }
       );
+      const data = await res.json();
+      console.log("Response Data ", data);
+      setCurrentOTP(otpValue);
       console.log("Server response:", await res.text());
     } catch (err) {
       console.error("Error sending OTP:", err);
     }
   };
 
-  // Start listening for OTP (poll inbox every 5s)
   const startListening = async () => {
     const hasPermission = await requestSMSPermission();
     if (!hasPermission) {
@@ -130,7 +138,6 @@ export default function HomeScreen() {
     }
   };
 
-  // Stop listening
   const stopListening = () => {
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
@@ -173,6 +180,9 @@ export default function HomeScreen() {
           <Text style={{ marginTop: 20 }}>
             Status: {listening ? "Listening..." : "Stopped"}
           </Text>
+          {currentOTP && (
+            <Text style={{ marginTop: 20 }}>Latest OTP: {currentOTP}</Text>
+          )}
         </>
       )}
     </View>
