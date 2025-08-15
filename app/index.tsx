@@ -103,7 +103,7 @@ export default function HomeScreen() {
   const sendOtpToServer = async (otpValue: string) => {
     try {
       const res = await fetch(
-        "https://telangana-sand-booking-backend.onrender.com/otp/",
+        "https://31.97.232.231/otp/",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
