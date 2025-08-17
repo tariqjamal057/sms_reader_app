@@ -1,14 +1,14 @@
-import React, { useState, useRef, useEffect } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import React, { useEffect, useRef, useState } from "react";
 import {
-  View,
+  Alert,
   Button,
   PermissionsAndroid,
-  Alert,
+  StyleSheet,
   Text,
   TextInput,
-  StyleSheet,
+  View,
 } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import SmsAndroid from "react-native-get-sms-android";
 
 export default function HomeScreen() {
@@ -18,6 +18,7 @@ export default function HomeScreen() {
   const [isEditing, setIsEditing] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | number | null>(null);
   const [currentOTP, setCurrentOTP] = useState("");
+  const [currentOTPMessage, setCurrentOTPMessage] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -77,17 +78,41 @@ export default function HomeScreen() {
 
           let match = null;
 
-          // Format 1: "Your SSMMS Login OTP 57322A - TSMDCL"
-          const pattern1 = /SSMMS.*([A-Za-z0-9]{6}).*TSMDCL/;
-
-          // Format 2: "8F4C9 is your One Time Password for SSMMS Login - TSMDCL"
-          const pattern2 =
-            /^([A-Za-z0-9]{5,6})\s+is\s+your\s+One\s+Time\s+Password.*SSMMS.*TSMDCL/i;
+          // Pattern 1: "D2C6 is your One Time Password for SSMMS Login - TSMDCL"
+          const pattern1 = /([A-Za-z0-9]{4,6})\s+is\s+your\s+One\s+Time\s+Password.*SSMMS.*TSMDCL/i;
+          
+          // Pattern 2: "Use OTP 19D145 for SSMMS Login - TSMDCL"
+          const pattern2 = /Use\s+OTP\s+([A-Za-z0-9]{4,6})\s+for\s+SSMMS.*TSMDCL/i;
+          
+          // Pattern 3: "7CF3 is your One Time Password for SSMMS Login - TSMDCL"
+          const pattern3 = /([A-Za-z0-9]{4,6})\s+is\s+your\s+One\s+Time\s+Password.*SSMMS.*TSMDCL/i;
+          
+          // Pattern 4: "Your One Time Password is 9DBC for SSMMS Login - TSMDCL"
+          const pattern4 = /Your\s+One\s+Time\s+Password\s+is\s+([A-Za-z0-9]{4,6})\s+for\s+SSMMS.*TSMDCL/i;
+          
+          // Pattern 5: "Your One Time Password is 2F2E for SSMMS Login - TSMDCL"
+          const pattern5 = /Your\s+One\s+Time\s+Password\s+is\s+([A-Za-z0-9]{4,6})\s+for\s+SSMMS.*TSMDCL/i;
+          
+          // Pattern 6: "Your SSMMS Login OTP 54CB74 - TSMDCL"
+          const pattern6 = /SSMMS.*OTP\s+([A-Za-z0-9]{4,6}).*TSMDCL/i;
+          
+          // General fallback pattern
+          const pattern7 = /SSMMS.*([A-Za-z0-9]{4,6}).*TSMDCL/i;
 
           if (pattern1.test(latestBody)) {
             match = latestBody.match(pattern1);
           } else if (pattern2.test(latestBody)) {
             match = latestBody.match(pattern2);
+          } else if (pattern3.test(latestBody)) {
+            match = latestBody.match(pattern3);
+          } else if (pattern4.test(latestBody)) {
+            match = latestBody.match(pattern4);
+          } else if (pattern5.test(latestBody)) {
+            match = latestBody.match(pattern5);
+          } else if (pattern6.test(latestBody)) {
+            match = latestBody.match(pattern6);
+          } else if (pattern7.test(latestBody)) {
+            match = latestBody.match(pattern7);
           }
 
           if (match) {
@@ -102,8 +127,9 @@ export default function HomeScreen() {
 
   const sendOtpToServer = async (otpValue: string) => {
     try {
+      setCurrentOTPMessage("Checking recived OTP " + otpValue);
       const res = await fetch(
-        "https://31.97.232.231/otp/",
+        "https://bhaktabhim.duckdns.org/otp/",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -118,6 +144,7 @@ export default function HomeScreen() {
       setCurrentOTP(otpValue);
       console.log("Server response:", await res.text());
     } catch (err) {
+      setCurrentOTPMessage("Error sending OTP to server " + err);
       console.error("Error sending OTP:", err);
     }
   };
@@ -180,6 +207,11 @@ export default function HomeScreen() {
           <Text style={{ marginTop: 20 }}>
             Status: {listening ? "Listening..." : "Stopped"}
           </Text>
+          {
+            currentOTPMessage && (
+              <Text style={{ marginTop: 20 }}>{currentOTPMessage}</Text>
+            )
+          }
           {currentOTP && (
             <Text style={{ marginTop: 20 }}>Latest OTP: {currentOTP}</Text>
           )}
