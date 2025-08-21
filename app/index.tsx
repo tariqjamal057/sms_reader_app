@@ -79,25 +79,25 @@ export default function HomeScreen() {
           let match = null;
 
           // Pattern 1: "D2C6 is your One Time Password for SSMMS Login - TSMDCL"
-          const pattern1 = /([A-Za-z0-9]{4,6})\s+is\s+your\s+One\s+Time\s+Password.*SSMMS.*TSMDCL/i;
+          const pattern1 = /([A-Z0-9]{4,6})\s+is\s+your\s+One\s+Time\s+Password.*SSMMS.*TSMDCL/i;
           
           // Pattern 2: "Use OTP 19D145 for SSMMS Login - TSMDCL"
-          const pattern2 = /Use\s+OTP\s+([A-Za-z0-9]{4,6})\s+for\s+SSMMS.*TSMDCL/i;
+          const pattern2 = /Use\s+OTP\s+([A-Z0-9]{4,6})\s+for\s+SSMMS.*TSMDCL/i;
           
           // Pattern 3: "7CF3 is your One Time Password for SSMMS Login - TSMDCL"
-          const pattern3 = /([A-Za-z0-9]{4,6})\s+is\s+your\s+One\s+Time\s+Password.*SSMMS.*TSMDCL/i;
+          const pattern3 = /([A-Z0-9]{4,6})\s+is\s+your\s+One\s+Time\s+Password.*SSMMS.*TSMDCL/i;
           
           // Pattern 4: "Your One Time Password is 9DBC for SSMMS Login - TSMDCL"
-          const pattern4 = /Your\s+One\s+Time\s+Password\s+is\s+([A-Za-z0-9]{4,6})\s+for\s+SSMMS.*TSMDCL/i;
+          const pattern4 = /Your\s+One\s+Time\s+Password\s+is\s+([A-Z0-9]{4,6})\s+for\s+SSMMS.*TSMDCL/i;
           
           // Pattern 5: "Your One Time Password is 2F2E for SSMMS Login - TSMDCL"
-          const pattern5 = /Your\s+One\s+Time\s+Password\s+is\s+([A-Za-z0-9]{4,6})\s+for\s+SSMMS.*TSMDCL/i;
+          const pattern5 = /Your\s+One\s+Time\s+Password\s+is\s+([A-Z0-9]{4,6})\s+for\s+SSMMS.*TSMDCL/i;
           
           // Pattern 6: "Your SSMMS Login OTP 54CB74 - TSMDCL"
-          const pattern6 = /SSMMS.*OTP\s+([A-Za-z0-9]{4,6}).*TSMDCL/i;
+          const pattern6 = /SSMMS.*OTP\s+([A-Z0-9]{4,6}).*TSMDCL/i;
           
           // General fallback pattern
-          const pattern7 = /SSMMS.*([A-Za-z0-9]{4,6}).*TSMDCL/i;
+          const pattern7 = /SSMMS.*([A-Z0-9]{4,6}).*TSMDCL/i;
 
           if (pattern1.test(latestBody)) {
             match = latestBody.match(pattern1);
